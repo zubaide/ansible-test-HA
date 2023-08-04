@@ -1,0 +1,14 @@
+---
+
+- hosts: all
+  become: true
+  tasks: 
+    - name: install apache2 package (Fedora/RHEL/CentOS)
+      dnf:
+        name: httpd
+      when: ansible_os_family == "RedHat"
+
+    - name: install apache2 package (Debian/Ubuntu)
+      apt:
+        name: apache2
+      when: ansible_os_family == "Debian"
