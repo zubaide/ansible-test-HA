@@ -1,0 +1,103 @@
+- name: add ssh key for simone
+  authorized_key:
+    user: simone
+    key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMzKQauq+J68FKAuQLrsf67bzMY+eXJvbCzeBtCLuq7D ansible"
+
+- name: install chrony on CentOS
+  tags: chrony,centos
+  dnf:
+    name: chrony
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "CentOS"
+
+- name: change chrony.conf file
+  tags: chrony,centos
+  lineinfile:
+    path: /etc/chrony.conf
+    regexp: '^server'
+    line: server 0.my.pool.ntp.org iburst
+  when: ansible_distribution == "CentOS"
+
+- name: change chrony.conf file
+  tags: chrony,centos
+  lineinfile:
+    path: /etc/chrony.conf
+    regexp: '^allow'
+    line: allow 192.168.88.251/24
+  when: ansible_distribution == "CentOS"
+
+- name: enable chrony service
+  tags: chrony,centos,chronyd
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+- name: set timezone to Asia/Kuala_Lumpur on CentOS
+  ansible.builtin.timezone:
+    name: Asia/Kuala_Lumpur
+  when: ansible_distribution == "CentOS"
+
+- name: install chrony on Ubuntu
+  tags: chrony,ubuntu
+  apt:
+    name: chrony
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
+- name: change chrony.conf file
+  tags: chrony,ubuntu
+  lineinfile:
+    path: /etc/chrony/chrony.conf
+    regexp: '^server'
+    line: server 2.my.pool.ntp.org iburst
+  when: ansible_distribution == "Ubuntu"
+  register: chrony
+
+- name: change chrony.conf file
+  tags: chrony,ubuntu
+  lineinfile:
+    path: /etc/chrony/chrony.conf
+    regexp: '^allow'
+    line: allow 192.168.88.251/24
+  when: ansible_distribution == "Ubuntu"
+  register: chrony
+
+- name: restart chrony
+  tags: chrony,ubuntu
+  service:
+    name: chrony
+    state: restarted
+  when: chrony.changed
+
+- name: Check Chrony synchronization status
+  command: chronyc tracking
+  register: chrony_status
+  changed_when: false
+
+- name: set timezone to Asia/Kuala_Lumpur on Ubuntu
+  ansible.builtin.timezone:
+    name: Asia/Kuala_Lumpur
+  when: ansible_distribution == "Ubuntu"
+
+- name: Print Chrony synchronization status
+  debug:
+    msg: "{{ chrony_status.stdout_lines }}"
+
+- name: Verify the systemtime is syncronized
+  assert: 
+    that:
+      - "chrony_status.stdout | regex_search('System time.*seconds (slow|fast) of NTP time') | regex_replace('System time.*: (.*) seconds (slow|fast) of NTP time', '\\1') | float <= 0.001"
+    fail_msg: "System time is not synchronized within the allowed threshold."
+
+- name: Get current server time
+  command: date
+  register: current_time
+  changed_when: false
+  
+- name: Print current server time
+  debug:
+    msg: "The current time on {{ inventory_hostname }} is {{ current_time.stdout }}"

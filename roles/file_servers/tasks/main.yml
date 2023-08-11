@@ -1,0 +1,55 @@
+- name: install apache2 package (Ubuntu) 
+  tags: apache,apache2,ubuntu 
+  apt: 
+    name:  
+      - apache2 
+      - libapache2-mod-php 
+    state: latest 
+  when: ansible_distribution == "Ubuntu" 
+          
+- name: change keep alive request 
+  tags: apache,apache2,ubuntu 
+  lineinfile:  
+    path: /etc/apache2/apache2.conf 
+    regexp: '^MaxKeepAliveRequests' 
+    line: MaxKeepAliveRequests 150 
+  when: ansible_distribution == "Ubuntu" 
+  register: apache2 
+ 
+- name: restart apache2 (Ubuntu) 
+  tags: apache,apache2,ubuntu     
+  service: 
+    name: apache2 
+    state: restarted 
+  when: apache2.changed 
+
+- name: install samba
+  apt: 
+    name: samba
+    state: latest
+
+- name: create shared directory
+  file:
+    path: /svr/shared
+    state: directory
+    mode: 0777
+
+- name: add samba share configuration
+  blockinfile:
+    path: /etc/samba/smb.conf
+    block: I
+      [shared]
+      path = /srv/shared
+      read only = no
+      guest = yes
+
+- name: restart samba service
+  systemd:
+    name: smbd
+    state: restarted
+  changed_when: false
+
+- name: ensure UFW allows samba
+  ufw:
+    rule: allow
+    name: samba

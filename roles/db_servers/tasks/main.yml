@@ -1,0 +1,65 @@
+- name: install apache2 package (CentOS) 
+  tags: apache,centos,httpd 
+  dnf: 
+    name:  
+      - httpd 
+      - php 
+    state: latest 
+  when: ansible_distribution == "CentOS" 
+  
+- name: start httpd (CentOS) 
+  tags: apache,centos,httpd 
+  service:  
+    name: httpd 
+    state: started 
+    enabled: yes 
+  when: ansible_distribution == "CentOS" 
+
+- name: install EPEL repository (Centos 7)
+  dnf: 
+    name: epel-release
+    state: present
+
+- name: install python 3 and pip3 
+  dnf:
+    name: 
+      - python36
+      - python36-pip
+    state: present
+
+- name: upgrade pip3 to the latest version
+  pip:
+    name: pip
+    state: latest
+    executable: /usr/bin/pip3
+
+- name: install PyMySQL (python MySQL library) using pip3
+  pip:
+    name: pymysql
+    state: present
+    executable: /usr/bin/pip3
+
+- name: install MariaDB server
+  dnf:
+    name:
+      - mariadb-server
+      - mariadb
+    state: latest
+
+- name: enable and start mariaDB service
+  service: 
+    name: mariadb
+    state: started
+    enabled: yes
+
+- name: create a database
+  mysql_db:
+    name: test_db
+    state: present
+
+- name: create a user with all previlages on the test_db
+  mysql_user:
+    name: John Doe
+    password: 123456789
+    priv: 'test_db.*:ALL'
+    state: present
