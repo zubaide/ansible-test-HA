@@ -3,19 +3,13 @@
     user: simone
     key: "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIMzKQauq+J68FKAuQLrsf67bzMY+eXJvbCzeBtCLuq7D ansible"
 
-- name: install chrony
-  tags: chrony,centos,ubuntu
-  package:
-    name: "{{ chrony_package_name }}"
+- name: install chrony on CentOS
+  tags: chrony,centos
+  dnf:
+    name: chrony
     state: latest
     update_cache: yes
-
-- name: enable chrony
-  tags: chrony,ubuntu,centos
-  service: 
-    name: "{{ enable_chrony_package }}"
-    enabled: yes
-    state: "{{ chrony_service_status }}"
+  when: ansible_distribution == "CentOS"
 
 - name: change chrony.conf file
   tags: chrony,centos
@@ -33,6 +27,27 @@
     line: allow 192.168.88.251/24
   when: ansible_distribution == "CentOS"
 
+- name: enable chrony service
+  tags: chrony,centos,chronyd
+  service:
+    name: chronyd
+    state: started
+    enabled: yes
+  when: ansible_distribution == "CentOS"
+
+- name: set timezone to Asia/Kuala_Lumpur on CentOS
+  ansible.builtin.timezone:
+    name: Asia/Kuala_Lumpur
+  when: ansible_distribution == "CentOS"
+
+- name: install chrony on Ubuntu
+  tags: chrony,ubuntu
+  apt:
+    name: chrony
+    state: latest
+    update_cache: yes
+  when: ansible_distribution == "Ubuntu"
+
 - name: change chrony.conf file
   tags: chrony,ubuntu
   lineinfile:
@@ -49,15 +64,24 @@
     regexp: '^allow'
     line: allow 192.168.88.251/24
   when: ansible_distribution == "Ubuntu"
+  register: chrony
+
+- name: restart chrony
+  tags: chrony,ubuntu
+  service:
+    name: chrony
+    state: restarted
+  when: chrony.changed
 
 - name: Check Chrony synchronization status
   command: chronyc tracking
   register: chrony_status
   changed_when: false
 
-- name: set timezone to Asia/Kuala_Lumpur
+- name: set timezone to Asia/Kuala_Lumpur on Ubuntu
   ansible.builtin.timezone:
-    name: "{{ set_time_zone }}"
+    name: Asia/Kuala_Lumpur
+  when: ansible_distribution == "Ubuntu"
 
 - name: Print Chrony synchronization status
   debug:

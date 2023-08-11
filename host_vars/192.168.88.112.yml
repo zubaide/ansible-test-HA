@@ -1,0 +1,6 @@
+chrony_package_name: chrony
+chrony_state: latest
+update_cache: yes
+chrony_service_status: started
+set_time_zone: Asia/Kuala_Lumpur
+enable_chrony_package: chronyd
