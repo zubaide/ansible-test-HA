@@ -4,3 +4,8 @@ chrony_state: latest
 update_cache: yes
 chrony_service_status: restarted
 set_time_zone: Asia/Kuala_Lumpur
+install_apache_package: apache2
+install_php_package: libapache2-mod-php
+php_state: latest
+ssh_users: "root simone"
+ssh_template_file: sshd_config_ubuntu.j2

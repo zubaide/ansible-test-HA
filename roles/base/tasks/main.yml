@@ -77,3 +77,13 @@
 - name: Print current server time
   debug:
     msg: "The current time on {{ inventory_hostname }} is {{ current_time.stdout }}"
+
+- name: generate sshd_config file from template
+  tags: ssh
+  template: 
+    src: "{{ ssh_template_file }}"
+    dest: /etc/ssh/sshd_config
+    owner: root
+    group: root
+    mode: 0644
+  notify: restart_sshd

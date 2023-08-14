@@ -2,9 +2,9 @@
   tags: apache,apache2,ubuntu 
   apt: 
     name:  
-      - apache2 
-      - libapache2-mod-php 
-    state: latest 
+      - "{{ install_apache_package }}" 
+      - "{{ install_php_package }}"
+    state: "{{ php_state }}"
   when: ansible_distribution == "Ubuntu" 
           
 - name: change keep alive request 
